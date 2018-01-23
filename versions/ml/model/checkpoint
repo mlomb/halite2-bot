@@ -1,0 +1,2 @@
+model_checkpoint_path: "D:\\User\\Desktop\\Haltie\\tsmlstarterbot\\..\\models\\model_long_training.ckpt"
+all_model_checkpoint_paths: "D:\\User\\Desktop\\Haltie\\tsmlstarterbot\\..\\models\\model_long_training.ckpt"
