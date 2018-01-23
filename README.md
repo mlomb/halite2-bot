@@ -1,0 +1,1 @@
+# halite2-bot
