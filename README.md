@@ -96,3 +96,4 @@ I think this is the most inefficient way to do navigation
 ## Rush defense
 
 ## Writing
+![Halite Message](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/halite-message.png)
