@@ -1,9 +1,6 @@
-# Halite 2 mlomb-bot
+# Halite 2 [mlomb-bot](https://halite.io/user/?user_id=5622)
 
 **(in progress)**
-
-## Disclosure
-I’m not a native english, so maybe I’ll have some errors.
 
 ## Client
 I’ve replaced the starter kit with my own classes. I feel like recreating the whole map every turn was unnecessary and it doesnt let me save information between turns inside an specific entity.
@@ -97,3 +94,32 @@ I think this is the most inefficient way to do navigation
 
 ## Writing
 ![Halite Message](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/halite-message.png)
+
+Here is an [example game](https://halite.io/play/?game_id=9403140).
+
+I did this because it was simple to implement and it shouldn't have any impact on the game. Although I have to say that sometimes I time out doing this in very rare cases.
+
+Writing things was possible only on won games so I first thought to write "GG" or something like that but it was too short and boring. I just ended up writing "HALITE" using ~45 ships.
+
+The most complicated part was to write the coordinates of each point that form the letters (which you can find in Instance.cpp:584) after that it was trivial just add a new task type and lower down the priority.
+
+To know where to position the message I just use a nice bruteforce algorithm (Instance.cpp:54) using the map to find the 140x22 rect closest to the center where no solid objects exists.
+
+To start writing the message I detect that the game is won like this:
+```
+// we should have at least 90 ships
+if (myShips > 90) {
+  // we own the 85% of the planets or all the planets - 1
+  if(myPlanets / totalPlanets > 0.85 || myPlanets >= totalPlanets -1)
+    // we won, start writing
+  }
+}
+```
+Once we start writing ship docking is disabled 25 turns so we can give it some time to the ships to write the message.
+
+## Thanks
+Thanks everyone in Two Sigma for creating this awesome competition. I wasn't here for Halite 1 but definitely I'll be here for the Halite 3, 4...
+
+Thanks to [fohristiwhirl](https://github.com/fohristiwhirl) for creating [Chlorine](https://github.com/fohristiwhirl/chlorine) it really helped me a lot.
+
+Also we had an awesome community on the Discord server, hope to see them next Halite again!
