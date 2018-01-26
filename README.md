@@ -84,6 +84,41 @@ To calculate the priority of a ship for a task I caulcuate the distance from the
 
 Then `priority = 100 - d / 100`.
 ## Map
+I represented the map as a grid where each map unit were divided into `MAP_DEFINITION` (4) map cells. Each turn the map is cleared and generated again.
+
+Each map cell contains:
+- `bool solid`
+- `int nextTurnEnemyShipsTakingDamage`
+- `int nextTurnFriendlyShipsTakingDamage`
+- `int nextTurnEnemyShipsAttackInRange`
+- `int nextTurnFriendlyShipsAttackInRange`
+  
+To generate the map first we iterate over all cells covered by a planet and mark them as solid (Map.cpp:24).
+
+After that, we add all ships into the map, this also include the ships that will spawn next turn near a planet to increase the accuarity.
+
+For each ship, depending on whether they are commandable or are undocked ships, friendly ships or enemy ships we fill the cell's values like this (Map.cpp:121):
+- First we select the radius we will iterate this ship:
+  - friendly and undocked: `SHIP_RADIUS + MAX_SPEED`
+  - friendly and docked *(or frozen)*: `SHIP_RADIUS + WEAPON_RADIUS`
+  - enemy and undocked: `SHIP_RADIUS + MAX_SPEED + WEAPON_RADIUS + 1`
+  - enemy and docked *(or frozen)*: `SHIP_RADIUS + WEAPON_RADIUS`
+
+Frozen ships are ships that will not move in this turn like ghost ships (ships that will spawn next turn) or ships that the navigation decided not to move.
+
+- After that, for each cell in this radius we increment the appropriate values:
+  - friendly and undocked: `nextTurnFriendlyShipsTakingDamage` and `nextTurnFriendlyShipsAttackInRange`
+  - friendly and docked `nextTurnFriendlyShipsTakingDamage`
+  - enemy and undocked: `nextTurnEnemyShipsTakingDamage` and `nextTurnEnemyShipsAttackInRange`
+  - enemy and docked *(or frozen)*: `nextTurnEnemyShipsTakingDamage`
+
+These are some images of the map after filling it (displaying `nextTurnFriendlyShipsAttackInRange` and `nextTurnEnemyShipsAttackInRange`):
+
+![Map2](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/map_2.bmp)
+
+![Map1](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/map_1.bmp)
+
+With all this information, we can now perform navigation.
 
 ## Navigation
 I think this is the most inefficient way to do navigation
