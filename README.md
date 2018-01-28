@@ -245,7 +245,7 @@ Clear and fill the map: 42ms
 ```
 
 ### Chlorine
-[Chlorine](https://github.com/fohristiwhirl/chlorine) created by [fohristiwhirl](https://github.com/fohristiwhirl) was the most important debugging tool I had. I contributed to add zoom on it. Then I used it to inspect in detail the micro-movements of top players.
+[Chlorine](https://github.com/fohristiwhirl/chlorine) created by [fohristiwhirl](https://github.com/fohristiwhirl) was the most important debugging tool I had. I contributed by adding zoom to it. Then I used it to inspect in detail the micro-movements of top players.
 
 I modified it a bit so I could draw some important ranges apart from the ATTACK_RADIUS that was there already. Here is a pic:
 
@@ -262,6 +262,5 @@ With this and watching a lot of replays I managed to build my map grid and my en
 Thanks everyone in Two Sigma for creating this awesome competition. I wasn't here for Halite 1 but definitely I'll be here for the Halite 3, 4...
 
 Thanks to [fohristiwhirl](https://github.com/fohristiwhirl) for creating [Chlorine](https://github.com/fohristiwhirl/chlorine) it really helped me a lot.
-
 
 Also we had an awesome community on the Discord server, hope to see them next Halite again!
