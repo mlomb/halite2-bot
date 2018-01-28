@@ -201,7 +201,7 @@ If we are attacking, first we check if the ships that can reach to this point ar
 ## Writing
 ![Halite Message](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/halite-message.png)
 
-Here is an [example game](https://halite.io/play/?game_id=9403140).
+Here is an [example game](https://halite.io/play/?game_id=9680808).
 
 I did this because it was simple to implement and it shouldn't have any impact on the game. Although I have to say that sometimes I time out doing this in very rare cases.
 
