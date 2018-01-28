@@ -2,10 +2,13 @@
 
 **(in progress)**
 
+In this write up  I'll basically explain my bot's logic in one turn and some important decisions that I took while coding it.
+
 ## Client
 I’ve replaced the starter kit with my own classes. I feel like recreating the whole map every turn was unnecessary and it doesnt let me save information between turns inside an specific entity.
 
 ## Task system
+I based my entrie high level strategy using a tasks system. This is how it works:
 There are tasks that ships should complete. Task types are: `SUICIDE` (not used), `ATTACK`, `WRITE`, `DEFEND`, `ESCAPE` and `DOCK`. Each task must have a target location. A task can optionally have a target entity and a max_ships value and some other information relative to that specific task.
 
 *Tip: If you are using [Chlorine](https://github.com/fohristiwhirl/chlorine) with my messages.json you can check the assigned task of this ship with the Angle Messages feature.*
@@ -83,6 +86,48 @@ To calculate the priority of a ship for a task I caulcuate the distance from the
   - `d += 40` its not important
 
 Then `priority = 100 - d / 100`.
+
+## Compute Move
+Given the task assigned each ship should issue a `DOCK`/`UNDOCK` command or create a `NavigationRequest` *(or do nothing)*.
+
+A `NavigationRequest` (Navigation.hpp:32) represents where and how a ship wants to navigate to a location. Basically it stores this:
+- A reference to the ship
+- The desired location
+- `avoid_enemies` if the navigation should avoid near enemies while navigating
+
+Computing the move basically occurs this way (Ship.cpp:80):
+
+- If the assigned task type is `ATTACK`:
+
+  We're going to issue a `NavigationRequest` with `avoid_enemies=false` and the target location will vary:
+    - If the target ship is a undocked ship the target location will be calculated as the closest point from the ship to the target ship 3 units away.
+    - If the target ship is a docked ship the target location will be calculated as follows:
+      - `Vector2 point =shipTarget->location + Vector2::Velocity(docked_planet->location.OrientTowardsRad(shipTarget->location), 10)`
+      - `Vector2 target= point.ClosestPointTo(shipTarget->location, shipTarget->radius, 1)`
+      
+      This way we obtain a point 10 units away from the target ship in the opposite direction facing the planet. Then we obtain the closest point 1 unit away as the target location. This is to avoid getting stucked between the planet and a docked ship.
+      
+      ![DockAttack](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/dock_attack.png)
+      
+- If the assigned task type is `DEFEND`:
+  - Issue a `NavigationRequest` with `avoid_enemies=false`.
+  
+    If we are very close (7 units) to the ship that we are defending from we just attack the ship, the target location will be the closest point from the ship to the enemy ship. If not, the target location will be the task location, to stay between the defended ship and the enemy ship.
+    
+    ![AttackDocked](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/attack_docked.png)
+- If the assigned task type is `DOCK`:
+  - If we are not docking or undocking
+  - If we are in `rush_phase` we define `threatened` as `threats != 0 && threats >= friends` where `threats` is the number of enemy ships inside `(TurnsToBeUndocked() + 1) * hlt::constants::MAX_SPEED + hlt::constants::WEAPON_RADIUS` and `friends` the same thing but for friendly ships.
+  - If we are docked and we are `threatened` or we surrender in 4p we issue a `Undock` move.
+  - If we can dock to the task's target
+    - If we are not threatened we issue a `Dock` move.
+    - else we are `threatened` or `waiting_for_write` so we will stay inside the docking area but away from the closest enemy as possible (Ship.cpp:135). [Here](https://halite.io/play/?game_id=9679885) is a game showcasing this case.
+  - If none of those conditions are met, we just continue navigating to the planet, so we issue a `NavigationRequest` with `avoid_enemies=true` and the location as the closest point from the ship to the planet.
+
+- If the assigned task type is `ESCAPE` or `WRITE`:
+  - Just issue a `NavigationRequest` with `avoid_enemies=true` and the target location as the task location.
+
+
 ## Map
 I represented the map as a grid where each map unit were divided into `MAP_DEFINITION` (4) map cells. Each turn the map is cleared and generated again.
 
