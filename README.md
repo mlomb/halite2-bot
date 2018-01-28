@@ -1,7 +1,5 @@
 # Halite 2 [mlomb-bot](https://halite.io/user/?user_id=5622)
 
-**(in progress)**
-
 In this write up  I'll basically explain my bot's logic in one turn and some important decisions that I took while coding it.
 
 ## Client
@@ -14,7 +12,7 @@ There are tasks that ships should complete. Task types are: `SUICIDE` (not used)
 *Tip: If you are using [Chlorine](https://github.com/fohristiwhirl/chlorine) with my messages.json you can check the assigned task of this ship with the Angle Messages feature.*
 
 ### Generating tasks
-At the beginning of the turn I generate all the tasks for this turn like this (Instance.cpp:473):
+At the beginning of the turn I generate all the tasks for this turn like this [(Instance.cpp:473)](../master/Latest/Instance.cpp#L473):
 - For each planet on the map
   - Create a `DOCK` task
     - `location` is set to the planet's location
@@ -55,7 +53,7 @@ At the beginning of the turn I generate all the tasks for this turn like this (I
 We've now created all the tasks but now we need to assign to each friendly ship a task. Some ships have a fixed task, like docked ships, so we manually assign the tasks for those ships. For rest of the ships we use a priority system.
 
 First we put all the (friendly) undocked ships inside a queue. This queue will contain all the ships that doesnt have a task assigned.
-- While the queue is not empty (Instance.cpp:745)
+- While the queue is not empty [(Instance.cpp:745)](../master/Latest/Instance.cpp#L745)
   - Take a ship from the queue
   - `maxPriority`, `priorizedTask`, `otherShipPtrOverriding` are initialized
     - For each task
@@ -68,7 +66,7 @@ First we put all the (friendly) undocked ships inside a queue. This queue will c
 Sometimes ships can't find a suitable task, so at the end I just assign them to the closest `ATTACK` or `DEFENND` tasks.
 
 #### Relative priority
-To calculate the priority of a ship for a task I caulcuate the distance from the ship to the target location and assign it to a variable `d` (Instance.cpp:765). Then I modify this variable depending on the task type like so *(very rough idea, the code will explain it better)*:
+To calculate the priority of a ship for a task I caulcuate the distance from the ship to the target location and assign it to a variable `d` [(Instance.cpp:765)](../master/Latest/Instance.cpp#L765). Then I modify this variable depending on the task type like so *(very rough idea, the code will explain it better)*:
 - `DOCK` task:
   - `d += 5`
   - Subtract `d` so it prefers outer planets
@@ -88,21 +86,21 @@ To calculate the priority of a ship for a task I caulcuate the distance from the
 Then `priority = 100 - d / 100`.
 
 ## Compute Move
-Given the task assigned each ship should issue a `DOCK`/`UNDOCK` command or create a `NavigationRequest` *(or do nothing)*.
+Given the task assigned each ship should issue a `Dock`/`Undock` move or create a `NavigationRequest` *(or do nothing)*.
 
-A `NavigationRequest` (Navigation.hpp:32) represents where and how a ship wants to navigate to a location. Basically it stores this:
+A `NavigationRequest` [(Navigation.hpp:32)](../master/Latest/Navigation.hpp#L32) represents where and how a ship wants to navigate to a location. Basically it stores this:
 - A reference to the ship
 - The desired location
 - `avoid_enemies` if the navigation should avoid near enemies while navigating
 
-Computing the move basically occurs this way (Ship.cpp:80):
+Computing the move basically occurs this way [(Ship.cpp:80)](../master/Latest/Ship.cpp#L80):
 
 - If the assigned task type is `ATTACK`:
 
   We're going to issue a `NavigationRequest` with `avoid_enemies=false` and the target location will vary:
     - If the target ship is a undocked ship the target location will be calculated as the closest point from the ship to the target ship 3 units away.
     - If the target ship is a docked ship the target location will be calculated as follows:
-      - `Vector2 point =shipTarget->location + Vector2::Velocity(docked_planet->location.OrientTowardsRad(shipTarget->location), 10)`
+      - `Vector2 point = shipTarget->location + Vector2::Velocity(docked_planet->location.OrientTowardsRad(shipTarget->location), 10)`
       - `Vector2 target= point.ClosestPointTo(shipTarget->location, shipTarget->radius, 1)`
       
       This way we obtain a point 10 units away from the target ship in the opposite direction facing the planet. Then we obtain the closest point 1 unit away as the target location. This is to avoid getting stucked between the planet and a docked ship.
@@ -121,7 +119,7 @@ Computing the move basically occurs this way (Ship.cpp:80):
   - If we are docked and we are `threatened` or we surrender in 4p we issue a `Undock` move.
   - If we can dock to the task's target
     - If we are not threatened we issue a `Dock` move.
-    - else we are `threatened` or `waiting_for_write` so we will stay inside the docking area but away from the closest enemy as possible (Ship.cpp:135). [Here](https://halite.io/play/?game_id=9679885) is a game showcasing this case.
+    - else we are `threatened` or `waiting_for_write` so we will stay inside the docking area but away from the closest enemy as possible [(Ship.cpp:473)](../master/Latest/Ship.cpp#L135). [Here](https://halite.io/play/?game_id=9679885) is a game showcasing this case.
   - If none of those conditions are met, we just continue navigating to the planet, so we issue a `NavigationRequest` with `avoid_enemies=true` and the location as the closest point from the ship to the planet.
 
 - If the assigned task type is `ESCAPE` or `WRITE`:
@@ -138,11 +136,11 @@ Each map cell contains:
 - `int nextTurnEnemyShipsAttackInRange`
 - `int nextTurnFriendlyShipsAttackInRange`
   
-To generate the map first we iterate over all cells covered by a planet and mark them as solid (Map.cpp:24).
+To generate the map first we iterate over all cells covered by a planet and mark them as solid [(Map.cpp:24)](../master/Latest/Map.cpp#L24).
 
 After that, we add all ships into the map, this also include the ships that will spawn next turn near a planet to increase the accuarity.
 
-For each ship, depending on whether they are commandable or are undocked ships, friendly ships or enemy ships we fill the cell's values like this (Map.cpp:121):
+For each ship, depending on whether they are commandable or are undocked ships, friendly ships or enemy ships we fill the cell's values like this [(Map.cpp:121)](../master/Latest/Map.cpp#L121):
 - First we select the radius we will iterate this ship:
   - friendly and undocked: `SHIP_RADIUS + MAX_SPEED`
   - friendly and docked *(or frozen)*: `SHIP_RADIUS + WEAPON_RADIUS`
@@ -165,12 +163,40 @@ These are some images of the map after filling it (displaying `nextTurnFriendlyS
 
 With all this information, we can now perform navigation.
 
-## Navigation
-I think this is the most inefficient way to do navigation
+## Navigation and Combat
+My navigation and combat work very tight together. I choose where to move a ship depending on the number of ships sorrounding and the distance to the desired target. No clustering going on.
 
-## Game over
+My navigation works like this [(Navigation.cpp:135)](../master/Latest/Navigation.cpp#L135):
+- Score all the possible movements (each one called `NavigationOption`) of every `NavigationRequest` (yes, thats (360 * 7 + 1) per ship) using the map and the `avoid_enemies` flag (more on this later).
+- Each ship sorts its `NavigationOption`s and sets `optionSelected` to `0` so they point to the best option.
+- We insert all the `NavigationRequest`s inside a queue.
+- While the queue is not empty
+  - Sort the queue so the ship with the least priority is first
+  - Pick the `NavigationRequest` on the top and remove it from the queue
+  - Set `optionSelected` to 0 for this ship
+  - Iterate over all options incrementing `optionSelected` until no conflicts are found with all the other `NavigationRequest`s like collisions.
+  - If we run out of options, this ship will stand still
+    - Update the map so this ship is now frozen
+    - Remove this ship from the `NavigationRequest`s set so its never processed again
+    - Recalculate the scores for near `NavigationRequest`s
+    - Add all the near `NavigationRequest`s to the queue again
 
-## Rush defense
+This process have some anti-timeout checks that will execute all the selected navigation options even if conflicts still exists because we run out of time.
+
+### Scoring the `NavigationOption`s
+
+This occurs inside CalculateScores [(Navigation.cpp:80)](../master/Latest/Navigation.cpp#L80) where we iterate all the `NavigationOption`s of all the `NavigationRequest`s. For each option, we check if there is static collision using `max_thrusts` (`max_thrusts` is calculated before calcuating the map *(and when modifing the map)* and it contains the max thrust value this ship can issue in a determinated angle, due ship-planet and ship-docked_ship collisions). If there is a problem, score will be set to `-99` if not, it will be delegated to `GetPositionScore`.
+`GetPositionScore` will calculate the score using the corresponding map cell information like this:
+- If `avoiding_enemies`
+  - `(100 - nextTurnEnemyShipsAttackInRange) * 10000 + MAX_DISTANCE - optionPosition.DistanceTo(targetLocation)`
+- else *(not avoiding enemies)*
+  - If `nextTurnFriendlyShipsTakingDamage > nextTurnEnemyShipsAttackInRange`
+    - `nextTurnEnemyShipsTakingDamage * 10000 + MAX_DISTANCE - optionPosition.DistanceTo(targetLocation)`
+  - else *(nope)*
+    - `-99`
+
+Basically, if we are avoiding enemies, we will prefer the option that have the less enemies in range next turn and then the closest one to the target.
+If we are attacking, first we check if the ships that can reach to this point are more than the enemy ships can reach and attack us. If thats possible, we'll maximize `nextTurnEnemyShipsTakingDamage` and then by proximity to the target.
 
 ## Writing
 ![Halite Message](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/halite-message.png)
@@ -181,9 +207,9 @@ I did this because it was simple to implement and it shouldn't have any impact o
 
 Writing things was possible only on won games so I first thought to write "GG" or something like that but it was too short and boring. I just ended up writing "HALITE" using ~45 ships.
 
-The most complicated part was to write the coordinates of each point that form the letters (which you can find in Instance.cpp:584) after that it was trivial just add a new task type and lower down the priority.
+The most complicated part was to write the coordinates of each point that form the letters (which you can find in [Instance.cpp:584](../master/Latest/Instance.cpp#L584)) after that it was trivial just add a new task type and lower down the priority.
 
-To know where to position the message I just use a nice bruteforce algorithm (Instance.cpp:54) using the map to find the 140x22 rect closest to the center where no solid objects exists.
+To know where to position the message I just use a nice bruteforce algorithm ([Instance.cpp:54](../master/Latest/Instance.cpp#L54)) using the map to find the 140x22 rect closest to the center where no solid objects exists.
 
 To start writing the message I detect that the game is won like this:
 ```
@@ -197,9 +223,45 @@ if (myShips > 90) {
 ```
 Once we start writing ship docking is disabled 25 turns so we can give it some time to the ships to write the message.
 
+## Debugging
+
+### Logging
+The most important way to debug the bot. I tried to log everyting that generates a big decision on the game, like task assignment or target location selections.
+At the end it doesnt matter what I log because I disable it with a flag during compilation [(Log.cpp:21)](../master/Latest/Log.cpp#L21).
+
+### A Stopwatch
+To measure the time each of my functions were taking I created a simple Stopwatch class [(Instance.hpp:17)](../master/Latest/Instance.hpp#L17) and use it like this:
+```cpp
+{
+  Stopwatch s("Clear and fill the map");
+  map->ClearMap();
+  map->FillMap();
+}
+```
+So when the Stopwatch object gets out of scope it measure the time between its instantiation and its destruction.
+Then at the end of the turn I get something like this:
+```
+Clear and fill the map: 42ms
+```
+
+### Chlorine
+[Chlorine](https://github.com/fohristiwhirl/chlorine) created by [fohristiwhirl](https://github.com/fohristiwhirl) was the most important debugging tool I had. I contributed to add zoom on it. Then I used it to inspect in detail the micro-movements of top players.
+
+I modified it a bit so I could draw some important ranges apart from the ATTACK_RADIUS that was there already. Here is a pic:
+
+![ChlorineRanges](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/chlorine_ranges.png)
+
+The ranges displayed are:
+- `SHIP_RADIUS + WEAPON_RADIUS` *(to know the actual attack radius)*
+- `SHIP_RADIUS + MAX_SPEED` *(to know where the ship could move next turn)*
+- `SHIP_RADIUS + MAX_SPEED + WEAPON_RADIUS` *(to know where this ship's attack can reach next turn)*
+
+With this and watching a lot of replays I managed to build my map grid and my entire combat strategy.
+
 ## Thanks
 Thanks everyone in Two Sigma for creating this awesome competition. I wasn't here for Halite 1 but definitely I'll be here for the Halite 3, 4...
 
 Thanks to [fohristiwhirl](https://github.com/fohristiwhirl) for creating [Chlorine](https://github.com/fohristiwhirl/chlorine) it really helped me a lot.
+
 
 Also we had an awesome community on the Discord server, hope to see them next Halite again!
