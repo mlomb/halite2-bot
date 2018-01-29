@@ -50,9 +50,9 @@ At the beginning of the turn I generate all the tasks for this turn like this [(
       - `max_ships` is set to -1 *(infinite ships)*
 
 ### Assigning tasks
-We've now created all the tasks but now we need to assign to each friendly ship a task. Some ships have a fixed task, like docked ships, so we manually assign the tasks for those ships. For rest of the ships we use a priority system.
+We've now created all the tasks but now we need to assign to each friendly ship a task. Some ships have a fixed task, like docked ships, so we manually assign the tasks for those ships. For the rest of the ships we use a priority system.
 
-First we put all the (friendly) undocked ships inside a queue. This queue will contain all the ships that doesnt have a task assigned.
+First we put all the (friendly) undocked ships inside a queue. This queue will contain all the ships that don't have a task assigned.
 - While the queue is not empty [(Instance.cpp:745)](../master/Latest/Instance.cpp#L745)
   - Take a ship from the queue
   - `maxPriority`, `priorizedTask`, `otherShipPtrOverriding` are initialized
@@ -66,7 +66,7 @@ First we put all the (friendly) undocked ships inside a queue. This queue will c
 Sometimes ships can't find a suitable task, so at the end I just assign them to the closest `ATTACK` or `DEFENND` tasks.
 
 #### Relative priority
-To calculate the priority of a ship for a task I caulcuate the distance from the ship to the target location and assign it to a variable `d` [(Instance.cpp:765)](../master/Latest/Instance.cpp#L765). Then I modify this variable depending on the task type like so *(very rough idea, the code will explain it better)*:
+To calculate the priority of a ship for a task I calculate the distance from the ship to the target location and assign it to a variable `d` [(Instance.cpp:765)](../master/Latest/Instance.cpp#L765). Then I modify this variable depending on the task type like so *(very rough idea, the code will explain it better)*:
 - `DOCK` task:
   - `d += 5`
   - Subtract `d` so it prefers outer planets
@@ -79,9 +79,9 @@ To calculate the priority of a ship for a task I caulcuate the distance from the
   - `d -= 5`
   - if `indefense`
     - `d -= 5`
-    - If there are more friendly ships close to this enemy ship its more important
+    - If there are more friendly ships close to this enemy ship it's more important
 - `WRITE` task:
-  - `d += 40` its not important
+  - `d += 40` it's not important
 
 Then `priority = 100 - d / 100`.
 
