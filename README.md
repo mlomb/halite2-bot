@@ -1,4 +1,4 @@
-# Halite 2 [mlomb-bot](https://halite.io/user/?user_id=5622)
+# Halite 2 [mlomb-bot](https://2017.halite.io/user/?user_id=5622)
 
 In this write up  I'll basically explain my bot's logic in one turn and some important decisions that I took while coding it.
 
@@ -119,7 +119,7 @@ Computing the move basically occurs this way [(Ship.cpp:80)](../master/Latest/Sh
   - If we are docked and we are `threatened` or we surrender in 4p we issue a `Undock` move.
   - If we can dock to the task's target
     - If we are not threatened we issue a `Dock` move.
-    - else we are `threatened` or `waiting_for_write` so we will stay inside the docking area but away from the closest enemy as possible [(Ship.cpp:473)](../master/Latest/Ship.cpp#L135). [Here](https://halite.io/play/?game_id=9679885) is a game showcasing this case.
+    - else we are `threatened` or `waiting_for_write` so we will stay inside the docking area but away from the closest enemy as possible [(Ship.cpp:473)](../master/Latest/Ship.cpp#L135). [Here](https://2017.halite.io/play/?game_id=9679885) is a game showcasing this case.
   - If none of those conditions are met, we just continue navigating to the planet, so we issue a `NavigationRequest` with `avoid_enemies=true` and the location as the closest point from the ship to the planet.
 
 - If the assigned task type is `ESCAPE` or `WRITE`:
@@ -201,7 +201,7 @@ If we are attacking, first we check if the ships that can reach to this point ar
 ## Writing
 ![Halite Message](https://raw.githubusercontent.com/mlomb/halite2-bot/master/imgs/halite-message.png)
 
-Here is an [example game](https://halite.io/play/?game_id=9680808).
+Here is an [example game](https://2017.halite.io/play/?game_id=9680808).
 
 I did this because it was simple to implement and it shouldn't have any impact on the game. Although I have to say that sometimes I time out doing this in very rare cases.
 
